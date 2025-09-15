@@ -1,0 +1,13 @@
+<!--En este doucumento registramos nuestra acción en formato de formulario donde podremos colocar el nombre de nuestro curso y rellenar nuestros campos con valores standard-->
+<odoo>
+    <record id="action_elearning_curso" model="ir.actions.act_window">
+        <field name="name">Curso</field> <!--Se da nombre a formulario-->
+        <field name="res_model">my learning.m learning</field><!--se referencia modelo proveniente de archivo models.py de nuestro módulo-->
+        <field name="view_mode">tree,form</field> <!--Formato de formulario-->
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear Nuevo Curso
+            </p>
+        </field>
+    </record>
+</odoo>

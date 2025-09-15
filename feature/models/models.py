@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 
-# from odoo import models, fields, api
+from odoo import models, fields, api
 
 
-# class feature(models.Model):
-#     _name = 'feature.feature'
-#     _description = 'feature.feature'
-
-#     name = fields.Char()
-#     value = fields.Integer()
-#     value2 = fields.Float(compute="_value_pc", store=True)
-#     description = fields.Text()
-#
-#     @api.depends('value')
-#     def _value_pc(self):
-#         for record in self:
-#             record.value2 = float(record.value) / 100
-
+class my_learning(models.Model):
+    _inherit = 'slide.channel' #herencia de modelo slide.channel
+    #todo debajo de este comentario hace referencia al modelo de nuestro módulo
+    _name = 'my_learning.my_learning'
+    _description = 'my_learning.my_learning'
+    nuevo_campo = fields.Char()

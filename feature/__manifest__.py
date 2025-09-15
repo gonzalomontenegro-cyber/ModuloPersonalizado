@@ -21,8 +21,9 @@ Long description of module's purpose
     'depends': ['base'],
 
     # always loaded
-    'data': [
+  'data': [
         # 'security/ir.model.access.csv',
+        'views/cursos_views.xml',
         'views/views.xml',
         'views/templates.xml',
     ],

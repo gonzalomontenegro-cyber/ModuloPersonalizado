@@ -1,60 +1,24 @@
 <odoo>
-  <data>
-    <!-- explicit list view definition -->
-<!--
-    <record model="ir.ui.view" id="feature.list">
-      <field name="name">feature list</field>
-      <field name="model">feature.feature</field>
-      <field name="arch" type="xml">
-        <list>
-          <field name="name"/>
-          <field name="value"/>
-          <field name="value2"/>
-        </list>
-      </field>
-    </record>
--->
+    <!--Se define el menu principal, aqui estaran todos los menús y     formularios-->
+    <menuitem id="menu_my_learning_root"
+        name="MyLearning"
+    />
+    <!--Se define nuestra pestaña principal al abrir el módulo, esta funciona como pestaña de navegación y para llamar a otras vistas o acciones-->
+    <menuitem id="menu_elearning"
+        parent="menu_my_learning_root"
+        name="Elearning"
+    />
 
-    <!-- actions opening views on models -->
-<!--
-    <record model="ir.actions.act_window" id="feature.action_window">
-      <field name="name">feature window</field>
-      <field name="res_model">feature.feature</field>
-      <field name="view_mode">list,form</field>
-    </record>
--->
+    <!--Tenemos que definir una acción, esto para:
+        1: Poder ver nuestra aplicación en el menú de home
+        2: Poder interactuar con formularios (en este caso están definidos en otro XML)
+    -->
+    <menuitem id="menu_cursos"
+        parent="menu_elearning"
+        name="Cursos"
+        action="action_elearning_curso"
+    />
+    <!-- llamada a acción dentro de cursos_views.xml→
 
-    <!-- server action to the one above -->
-<!--
-    <record model="ir.actions.server" id="feature.action_server">
-      <field name="name">feature server</field>
-      <field name="model_id" ref="model_feature_feature"/>
-      <field name="state">code</field>
-      <field name="code">
-        action = {
-          "type": "ir.actions.act_window",
-          "view_mode": "list,form",
-          "res_model": model._name,
-        }
-      </field>
-    </record>
--->
+ </odoo>
 
-    <!-- Top menu item -->
-<!--
-    <menuitem name="feature" id="feature.menu_root"/>
--->
-    <!-- menu categories -->
-<!--
-    <menuitem name="Menu 1" id="feature.menu_1" parent="feature.menu_root"/>
-    <menuitem name="Menu 2" id="feature.menu_2" parent="feature.menu_root"/>
--->
-    <!-- actions -->
-<!--
-    <menuitem name="List" id="feature.menu_1_list" parent="feature.menu_1"
-              action="feature.action_window"/>
-    <menuitem name="Server to list" id="feature" parent="feature.menu_2"
-              action="feature.action_server"/>
--->
-  </data>
-</odoo>
