@@ -3,6 +3,9 @@
 
 
 
+from dataclasses import fields
+from odoo import models, fields, api
+
 class my_learning(models.Model):
     _inherit = 'slide.channel' #herencia de modelo slide.channel
     #todo debajo de este comentario hace referencia al modelo de nuestro módulo
