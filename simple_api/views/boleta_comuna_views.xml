@@ -3,9 +3,9 @@
     <field name="name">boleta.comuna.tree</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
-      <tree string="Comunas">
+      <list string="Comunas">
         <field name="name"/>
-      </tree>
+      </list>
     </field>
   </record>
 
