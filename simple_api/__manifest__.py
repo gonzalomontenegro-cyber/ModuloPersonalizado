@@ -21,12 +21,12 @@
     'data': [
         'views/boletas_honorarios_views.xml',
         'views/res_config_settings_views.xml',
-        'data/ir_cron_data.xml',
+        #'data/ir_cron_data.xml',
         'security/ir.model.access.csv',
     ],
     'assets': {
         'web.assets_backend': [
-            'boleta_honorarios_simpleapi/static/src/js/preview_iframe.js',
+            #'boleta_honorarios_simpleapi/static/src/js/preview_iframe.js',
         ],
     },
     'installable': True,
