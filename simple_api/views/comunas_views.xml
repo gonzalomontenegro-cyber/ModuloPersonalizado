@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción -->
+    <record id="action_boleta_comuna" model="ir.actions.act_window">
+        <field name="name">Comunas</field>
+        <field name="res_model">boleta.comuna</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p>Gestiona las comunas chilenas asociadas a la emisión de boletas.</p>
+        </field>
+    </record>
+
+    <!-- Menú -->
+    <menuitem id="menu_boleta_honorarios_root" name="Boletas de Honorarios" sequence="10"/>
+    <menuitem id="menu_boleta_comunas" name="Comunas" parent="menu_boleta_honorarios_root" action="action_boleta_comuna" sequence="20"/>
+
+    <!-- Vista Tree -->
+    <record id="view_boleta_comuna_tree" model="ir.ui.view">
+        <field name="name">boleta.comuna.tree</field>
+        <field name="model">boleta.comuna</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="region"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Form -->
+    <record id="view_boleta_comuna_form" model="ir.ui.view">
+        <field name="name">boleta.comuna.form</field>
+        <field name="model">boleta.comuna</field>
+        <field name="arch" type="xml">
+            <form string="Comuna">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="region"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
