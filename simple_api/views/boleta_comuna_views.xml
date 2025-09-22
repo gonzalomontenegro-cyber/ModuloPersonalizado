@@ -5,6 +5,7 @@
     <field name="arch" type="xml">
       <tree>
         <field name="name"/>
+        <!-- otros campos si tienes -->
       </tree>
     </field>
   </record>
@@ -14,15 +15,24 @@
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
       <form>
-        <field name="name"/>
+        <sheet>
+          <group>
+            <field name="name"/>
+            <!-- otros campos -->
+          </group>
+        </sheet>
       </form>
     </field>
   </record>
 
+  <!-- Acción -->
   <record id="action_boleta_comuna" model="ir.actions.act_window">
-    <field name="name">Comunas</field>
+    <field name="name">Boleta Comunas</field>
     <field name="res_model">boleta.comuna</field>
     <field name="view_mode">tree,form</field>
-    <field name="target">current</field>
   </record>
+
+  <!-- Menú (opcional) -->
+  <menuitem id="menu_boleta_comuna_root" name="Comunas Boleta" sequence="99"/>
+  <menuitem id="menu_boleta_comuna" name="Comunas" parent="menu_boleta_comuna_root" action="action_boleta_comuna"/>
 </odoo>
