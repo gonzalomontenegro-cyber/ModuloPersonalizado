@@ -10,9 +10,6 @@
         </field>
     </record>
 
-    <!-- Menú -->
-    <menuitem id="menu_boleta_comunas" name="Comunas" parent="menu_boleta_honorarios_root" action="action_boleta_comuna" sequence="20"/>
-
     <!-- Vista Tree -->
     <record id="view_boleta_comuna_tree" model="ir.ui.view">
         <field name="name">boleta.comuna.tree</field>
