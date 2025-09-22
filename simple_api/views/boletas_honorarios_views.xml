@@ -67,7 +67,7 @@
 
           <notebook>
             <page string="Respuesta API">
-              <field name="response_data" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+              <field name="response_data" widget="ace" readonly="1"/>
             </page>
             <page string="Errores">
               <field name="error_message" readonly="1"/>
