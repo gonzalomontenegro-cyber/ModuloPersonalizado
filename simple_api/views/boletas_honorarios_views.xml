@@ -6,7 +6,6 @@
     <field name="arch" type="xml">
       <form string="Boleta de Honorarios">
         <header>
-          <button name="lista_comunas" string="Lista Comunas" type="object" class="btn btn-info" />
           <button name="action_emitir_boleta" string="Emitir Boleta" type="object" class="btn-primary"/>
           <!-- Botón legacy opcional -->
           <button name="action_anular_boleta" string="Anular (legacy)" type="object" class="btn-secondary"
