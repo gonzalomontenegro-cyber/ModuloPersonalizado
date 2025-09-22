@@ -1,34 +1,35 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "simple_api",
-
-    'summary': "Short (1 phrase/line) summary of the module's purpose",
-
+    'name': 'Boletas de Honorarios SimpleAPI',
+    'version': '18.0.1.0.0',
+    'category': 'Accounting/Localization',
+    'summary': 'Integración con SimpleAPI para emisión automática de boletas de honorarios',
     'description': """
-Long description of module's purpose
+        Módulo para la creación y autodescarga de boletas de honorarios
+        mediante integración con SimpleAPI Chile.
+        
+        Características:
+        - Emisión automática de boletas de honorarios
+        - Descarga automática de PDF
+        - Integración directa con SII Chile
+        - Gestión de estados y seguimiento
     """,
-
-    'author': "My Company",
-    'website': "https://www.yourcompany.com",
-
-    # Categories can be used to filter modules in modules listing
-    # Check https://github.com/odoo/odoo/blob/15.0/odoo/addons/base/data/ir_module_category_data.xml
-    # for the full list
-    'category': 'Uncategorized',
-    'version': '0.1',
-
-    # any module necessary for this one to work correctly
-    'depends': ['base'],
-
-    # always loaded
+    'author': 'Tu Empresa',
+    'website': 'https://www.tuempresa.com',
+    'license': 'LGPL-3',
+    'depends': ['base', 'account', 'contacts', 'mail','web'],
     'data': [
-        # 'security/ir.model.access.csv',
-        'views/views.xml',
-        'views/templates.xml',
+        'views/boleta_honorarios_views.xml',
+        'views/res_config_settings_views.xml',
+        #'data/ir_cron_data.xml',
+        'security/ir.model.access.csv',
     ],
-    # only loaded in demonstration mode
-    'demo': [
-        'demo/demo.xml',
-    ],
+    'assets': {
+        'web.assets_backend': [
+            #'boleta_honorarios_simpleapi/static/src/js/preview_iframe.js',
+        ],
+    },
+    'installable': True,
+    'auto_install': False,
+    'application': True,
 }
-

@@ -1,3 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from . import models
+from . import boleta_honorarios
+from . import res_config_settings
