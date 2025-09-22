@@ -384,13 +384,13 @@ class BoletaHonorarios(models.Model):
                 _logger.warning(f"[BHE] Error inesperado anulando boleta {record.numero_boleta}: {e}")
                 raise UserError(_('Error inesperado anulando boleta: %s') % str(e))  # [4][3]
             def lista_comunas(self):
-    return {
-        'type': 'ir.actions.act_window',
-        'name': 'Comunas',
-        'res_model': 'boleta.comuna',
-        'view_mode': 'tree,form',
-        'target': 'current',
-    }
+                return {
+                    'type': 'ir.actions.act_window',
+                    'name': 'Comunas',
+                    'res_model': 'boleta.comuna',
+                    'view_mode': 'tree,form',
+                    'target': 'current',
+            }
 
     @api.model
     def cron_download_pending_pdfs(self):
