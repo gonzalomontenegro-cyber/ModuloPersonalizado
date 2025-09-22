@@ -11,7 +11,6 @@
     </record>
 
     <!-- Menú -->
-    <menuitem id="menu_boleta_honorarios_root" name="Boletas de Honorarios" sequence="10"/>
     <menuitem id="menu_boleta_comunas" name="Comunas" parent="menu_boleta_honorarios_root" action="action_boleta_comuna" sequence="20"/>
 
     <!-- Vista Tree -->
