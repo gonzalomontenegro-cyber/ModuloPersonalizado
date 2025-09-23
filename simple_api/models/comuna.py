@@ -10,8 +10,12 @@ class BoletaComuna(models.Model):
     _description = 'Comuna'
     _rec_name = 'nombre'
 
-    nombre = fields.Char(string="Nombre", required=True, unique=True)
+    nombre = fields.Char(string="Nombre", required=True)
     boleta_ids = fields.One2many('boleta.honorarios', 'comuna_id', string="Boletas Asociadas")
+    _sql_constraints = [
+    ('nombre_unique', 'unique(nombre)', 'El nombre de la comuna debe ser único.'),
+]
+
 
 
 class BoletaHonorarios(models.Model):

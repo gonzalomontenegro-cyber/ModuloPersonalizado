@@ -1,23 +1,35 @@
-<record id="view_boleta_comuna_list" model="ir.ui.view">
-  <field name="name">boleta.comuna.list</field>
-  <field name="model">boleta.comuna</field>
-  <field name="arch" type="xml">
-    <list>
-      <field name="nombre"/>
-      <field name="boleta_ids" widget="one2many_list"/>
-    </list>
-  </field>
-</record>
-
-<record id="view_boleta_comuna_form" model="ir.ui.view">
-  <field name="name">boleta.comuna.form</field>
-  <field name="model">boleta.comuna</field>
-  <field name="arch" type="xml">
-    <form>
-      <group>
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_boleta_comuna_tree" model="ir.ui.view">
+    <field name="name">boleta.comuna.tree</field>
+    <field name="model">boleta.comuna</field>
+    <field name="arch" type="xml">
+      <tree>
         <field name="nombre"/>
-        <field name="boleta_ids"/>
-      </group>
-    </form>
-  </field>
-</record>
+        <field name="boleta_ids" widget="one2many_list"/>
+      </tree>
+    </field>
+  </record>
+
+  <record id="view_boleta_comuna_form" model="ir.ui.view">
+    <field name="name">boleta.comuna.form</field>
+    <field name="model">boleta.comuna</field>
+    <field name="arch" type="xml">
+      <form>
+        <group>
+          <field name="nombre"/>
+          <field name="boleta_ids"/>
+        </group>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_boleta_comuna" model="ir.actions.act_window">
+    <field name="name">Comunas</field>
+    <field name="res_model">boleta.comuna</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+  <menuitem id="menu_boleta_comuna_root" name="Comunas" parent="menu_boleta_honorarios_root" sequence="10"/>
+  <menuitem id="menu_boleta_comuna" name="Gestionar Comunas" parent="menu_boleta_comuna_root" action="action_boleta_comuna" sequence="10"/>
+</odoo>
