@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from odoo.exceptions import UserError
 import requests
 import logging
 
@@ -8,14 +9,14 @@ _logger = logging.getLogger(__name__)
 class BoletaComuna(models.Model):
     _name = 'boleta.comuna'
     _description = 'Comuna'
-    _rec_name = 'nombre'
+    _rec_name = 'nombre'  # Para mostrar 'nombre' en vez de 'name' por defecto
 
     nombre = fields.Char(string="Nombre", required=True)
     boleta_ids = fields.One2many('boleta.honorarios', 'comuna_id', string="Boletas Asociadas")
-    _sql_constraints = [
-    ('nombre_unique', 'unique(nombre)', 'El nombre de la comuna debe ser único.'),
-]
 
+    _sql_constraints = [
+        ('nombre_unique', 'unique(nombre)', 'El nombre de la comuna debe ser único.'),
+    ]
 
 
 class BoletaHonorarios(models.Model):
@@ -25,7 +26,7 @@ class BoletaHonorarios(models.Model):
 
     @api.model
     def obtener_comunas_simpleapi(self):
-        """Consume la API y guarda comunas nuevas en boleta.comuna"""
+        """Consume la API de SimpleAPI y guarda comunas nuevas en boleta.comuna"""
         url = "https://servicios.simpleapi.cl/api/bhe/listarComunas"
 
         try:
@@ -40,15 +41,15 @@ class BoletaHonorarios(models.Model):
                     if not existing:
                         self.env['boleta.comuna'].create({'nombre': nombre_comuna})
 
-            _logger.info("Comunas cargadas correctamente desde SimpleAPI")
+            _logger.info("✅ Comunas cargadas correctamente desde SimpleAPI.")
 
         except Exception as e:
-            _logger.error("Error al obtener comunas desde SimpleAPI: %s", e)
+            _logger.error("❌ Error al obtener comunas desde SimpleAPI: %s", e)
             raise UserError(f"Error al obtener comunas: {e}")
 
     def agrupar_boletas_por_comuna(self):
         """Asigna las boletas emitidas a su comuna correspondiente"""
-        self.obtener_comunas_simpleapi()  # Asegurarse de tener comunas actualizadas
+        self.obtener_comunas_simpleapi()  # Asegura comunas actualizadas
 
         todas_boletas = self.env['boleta.honorarios'].search([('state', '=', 'emitted')])
 
