@@ -23,3 +23,5 @@ class ResConfigSettings(models.TransientModel):
         default=30,
         help='Tiempo límite para las peticiones HTTP'
     )
+
+    

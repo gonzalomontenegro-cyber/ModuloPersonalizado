@@ -12,7 +12,8 @@
                   confirm="¿Está seguro de anular esta boleta (legacy)?"/>
           <button name="action_anular_boleta_path" string="Anular por folio" type="object" class="btn-danger"
                   confirm="Se anulará la boleta en SII vía SimpleAPI usando el motivo seleccionado. ¿Continuar?"/>
-          <button name="%(action_boleta_comuna)d" type="action" string="Abrir Comunas" class="btn-primary"/>
+                  <button name="agrupar_boletas_por_comuna" type="object" string="Agrupar Boletas por Comuna" class="btn-primary" context="{}"/>
+
           <field name="state" widget="statusbar" statusbar_visible="draft,processing,emitted,downloaded,cancelled,error"/>
         </header>
         <sheet>
