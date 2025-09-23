@@ -12,6 +12,7 @@
                   confirm="¿Está seguro de anular esta boleta (legacy)?"/>
           <button name="action_anular_boleta_path" string="Anular por folio" type="object" class="btn-danger"
                   confirm="Se anulará la boleta en SII vía SimpleAPI usando el motivo seleccionado. ¿Continuar?"/>
+          <button name="%(action_res_comuna)d" type="action" string="Abrir Comunas" class="btn-primary"/>
           <field name="state" widget="statusbar" statusbar_visible="draft,processing,emitted,downloaded,cancelled,error"/>
         </header>
         <sheet>
@@ -109,7 +110,7 @@
     <field name="view_mode">list,form</field>
   </record>
 
-  <menuitem id="menu_boleta_honorarios_root" name="Boletas Honorarios" sequence="50"/>
-  <menuitem id="menu_boleta_honorarios" name="Boletas de Honorarios"
-            parent="menu_boleta_honorarios_root" action="action_boleta_honorarios" sequence="10"/>
+<menuitem id="menu_boleta_comuna_root" name="Comunas" parent="menu_boleta_honorarios_root" sequence="10"/>
+<menuitem id="menu_boleta_comuna" name="Gestionar Comunas" parent="menu_boleta_comuna_root" action="action_boleta_comuna" sequence="10"/>
+
 </odoo>
