@@ -1,8 +1,7 @@
 from odoo import models, fields
 
-class ResComuna(models.Model):
-    _name = 'res.comuna'
-    _description = 'Comunas de Chile'
+class BoletaComuna(models.Model):
+    _name = 'boleta.comuna'
+    _description = 'Comuna'
 
-    name = fields.Char('Nombre', required=True)
-    region_id = fields.Many2one('res.region', string='Región')  # asumiendo que tienes modelo región
+    name = fields.Char(string='Nombre', required=True)
