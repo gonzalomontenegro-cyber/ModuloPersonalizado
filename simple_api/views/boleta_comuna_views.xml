@@ -4,9 +4,9 @@
     <field name="name">boleta.comuna.list</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
-      <list>
+      <list string="Comunas">
         <field name="nombre"/>
-        <field name="boleta_ids" widget="one2many_list"/>
+        <field name="boleta_ids"/>
       </list>
     </field>
   </record>
@@ -15,11 +15,13 @@
     <field name="name">boleta.comuna.form</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
-      <form>
-        <group>
-          <field name="nombre"/>
-          <field name="boleta_ids"/>
-        </group>
+      <form string="Comuna">
+        <sheet>
+          <group>
+            <field name="nombre"/>
+            <field name="boleta_ids"/>
+          </group>
+        </sheet>
       </form>
     </field>
   </record>
