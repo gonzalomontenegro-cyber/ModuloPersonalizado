@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <record id="view_boleta_honorarios_form" model="ir.ui.view">
-    <field name="name">boleta.honorarios.form</field>
+    <field name="nombre">boleta.honorarios.form</field>
     <field name="model">boleta.honorarios</field>
     <field name="arch" type="xml">
       <form string="Boleta de Honorarios">
