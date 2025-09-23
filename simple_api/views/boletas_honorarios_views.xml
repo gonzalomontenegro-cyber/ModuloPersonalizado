@@ -144,11 +144,30 @@
     <field name="view_id" ref="view_boleta_comuna_list"/>
 </record>
 
-<!-- Menú raíz del módulo -->
-<menuitem id="menu_boleta_honorarios_root" name="Boletas de Honorarios" sequence="10"/>
+<!-- Acción principal para Boletas -->
+<record id="action_boleta_honorarios" model="ir.actions.act_window">
+    <field name="name">Boletas de Honorarios</field>
+    <field name="res_model">boleta.honorarios</field>
+    <field name="view_mode">list,form</field>
+</record>
 
-<!-- Submenú para Comunas -->
-<menuitem id="menu_boleta_comuna_root" name="Comunas" parent="menu_boleta_honorarios_root" sequence="10"/>
-<menuitem id="menu_boleta_comuna" name="Gestionar Comunas" parent="menu_boleta_comuna_root" action="action_boleta_comuna" sequence="10"/>
+<!-- Menú raíz con acción asignada -->
+<menuitem id="menu_boleta_honorarios_root"
+          name="Boletas de Honorarios"
+          sequence="5"
+          action="action_boleta_honorarios"/>
+
+<!-- Submenús -->
+<menuitem id="menu_boleta_comuna_root"
+          name="Comunas"
+          parent="menu_boleta_honorarios_root"
+          sequence="10"/>
+
+<menuitem id="menu_boleta_comuna"
+          name="Gestionar Comunas"
+          parent="menu_boleta_comuna_root"
+          action="action_boleta_comuna"
+          sequence="10"/>
+
 
 </odoo>
