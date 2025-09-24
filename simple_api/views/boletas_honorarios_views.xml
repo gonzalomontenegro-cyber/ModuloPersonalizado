@@ -45,6 +45,7 @@
               <field name="receptor_direccion" placeholder="Dirección completa del receptor"/>
               <field name="receptor_region"/>
               <field name="comuna_id" placeholder="Comuna del receptor"/>
+              <field name="receptor_comuna" invisible="1"/> <!-- 👈 Campo añadido -->
             </group>
           </group>
 

@@ -76,7 +76,7 @@ class BoletaHonorarios(models.Model):
         ('9', 'Araucanía'), ('10', 'Los Lagos'), ('11', 'Aysén'), ('12', 'Magallanes'),
         ('13', 'Metropolitana'), ('14', 'Los Ríos'), ('15', 'Arica y Parinacota'), ('16', 'Ñuble')
     ], string='Región Receptor', default='13', required=True)
-    receptor_comuna = fields.Char('Comuna Receptor', required=True)
+    receptor_comuna = fields.Char('Comuna Receptor')
 
     # Detalles de la prestación
     descripcion_servicio = fields.Text('Descripción del Servicio', required=True)
