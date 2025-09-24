@@ -27,7 +27,7 @@
             <page string="Boletas">
               <field name="boleta_ids">
                 <tree>
-                  <field name="numero_boleta"/>
+                  <field name="name"/>
                   <field name="partner_id"/>
                   <field name="state"/>
                 </tree>
