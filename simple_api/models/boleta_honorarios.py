@@ -431,22 +431,22 @@ class BoletaHonorarios(models.Model):
         dv_calc = '0' if resto == 0 else 'K' if resto == 1 else str(11 - resto)
         return dv == dv_calc
     @api.model
+    @api.model
     def create(self, vals):
-        records = super(BoletaHonorarios, self).create(vals_list)
-        for record in records:
-            try:
-                if not record.comuna_id and record.partner_id and record.partner_id.city:
-                    comuna_name = record.partner_id.city.strip()
-                    comuna_obj = self.env['boleta.comuna']
-                    comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
-                    if not comuna:
-                        comuna = comuna_obj.create({'name': comuna_name})
-                        _logger.info(f"Comuna creada automáticamente: {comuna_name}")
-                    record.comuna_id = comuna.id
-            except Exception as e:
-                _logger.error(f"Error asociando comuna a boleta {record.id}: {e}")
-                raise UserError(_("No se pudo asociar una comuna a la boleta. Contacta al administrador."))
-        return records
+        record = super(BoletaHonorarios, self).create(vals)
+        try:
+            if not record.comuna_id and record.partner_id and record.partner_id.city:
+                comuna_name = record.partner_id.city.strip()
+                comuna_obj = self.env['boleta.comuna']
+                comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
+            if not comuna:
+                comuna = comuna_obj.create({'name': comuna_name})
+                _logger.info(f"Comuna creada automáticamente: {comuna_name}")
+            record.comuna_id = comuna.id
+        except Exception as e:
+            _logger.error(f"Error asociando comuna a boleta {record.id}: {e}")
+            raise UserError(_("No se pudo asociar una comuna a la boleta. Contacta al administrador."))
+        return record
 
     def write(self, vals):
         res = super(BoletaHonorarios, self).write(vals)
