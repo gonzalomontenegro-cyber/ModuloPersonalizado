@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
   <!-- Vista KANBAN -->
   <record id="view_boleta_comuna_kanban" model="ir.ui.view">
     <field name="name">boleta.comuna.kanban</field>
@@ -14,7 +13,7 @@
                 <strong><field name="name"/></strong>
               </div>
               <div>
-                Boletas: <field name="boletas_count"/>
+                <field name="boletas_count"/>
               </div>
             </div>
           </t>
@@ -24,39 +23,33 @@
   </record>
 
   <!-- Vista LISTA -->
-  <record id="view_boleta_comuna_list" model="ir.ui.view">
-    <field name="name">boleta.comuna.list</field>
+  <record id="view_boleta_comuna_tree" model="ir.ui.view">
+    <field name="name">boleta.comuna.tree</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
-      <list string="Comunas">
+      <tree>
+        <field name="codigo"/>
         <field name="name"/>
         <field name="boletas_count"/>
-      </list>
+      </tree>
     </field>
   </record>
 
-  <!-- Vista FORMULARIO -->
+  <!-- Vista FORM con botón para sincronizar -->
   <record id="view_boleta_comuna_form" model="ir.ui.view">
     <field name="name">boleta.comuna.form</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
-      <form string="Comuna">
+      <form>
+        <header>
+          <button name="sync_comunas" type="object" string="Actualizar desde SimpleAPI" class="btn-primary"/>
+        </header>
         <sheet>
           <group>
+            <field name="codigo"/>
             <field name="name"/>
             <field name="boletas_count" readonly="1"/>
           </group>
-          <notebook>
-            <page string="Boletas">
-              <field name="boleta_ids">
-                <list>
-                  <field name="numero_boleta"/>
-                  <field name="partner_id"/>
-                  <field name="state"/>
-                </list>
-              </field>
-            </page>
-          </notebook>
         </sheet>
       </form>
     </field>
