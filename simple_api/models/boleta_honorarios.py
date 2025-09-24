@@ -129,7 +129,7 @@ class BoletaHonorarios(models.Model):
     @api.model
     def get_simpleapi_config(self):
         config = self.env['ir.config_parameter'].sudo()
-        api_key = config.get_param('boleta_honorarios.simpleapi_api_key', '4648-N330-6392-2590-9354')
+        api_key = config.get_param('boleta_honorarios.simpleapi_api_key', '5858-R580-6392-2845-5641')
         base_url = config.get_param('boleta_honorarios.simpleapi_base_url', 'https://servicios.simpleapi.cl/api')
         timeout = int(config.get_param('boleta_honorarios.simpleapi_timeout', '30'))
         _logger.info(f"[BHE] Config SimpleAPI base_url={base_url} api_key={_mask_key(api_key)} timeout={timeout}")
