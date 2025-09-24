@@ -31,6 +31,14 @@ class BoletaHonorarios(models.Model):
     _rec_name = 'numero_boleta'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
+    # Nuevo campo para asociar con comuna
+    comuna_id = fields.Many2one(
+        "boleta.comuna",
+        string="Comuna",
+        ondelete="set null",
+        help="Comuna asociada automáticamente al emitir la boleta."
+    )
+
     # Campos básicos
     numero_boleta = fields.Char('Número de Boleta', readonly=True, tracking=True)
     fecha_emision = fields.Date('Fecha Emisión', default=fields.Date.today, required=True, tracking=True)
@@ -422,3 +430,49 @@ class BoletaHonorarios(models.Model):
         resto = suma % 11
         dv_calc = '0' if resto == 0 else 'K' if resto == 1 else str(11 - resto)
         return dv == dv_calc
+    @api.model
+    def create(self, vals):
+        """Sobrescribimos create para asociar o crear comuna automáticamente"""
+        try:
+            comuna_name = vals.get("comuna") or self.env["res.partner"].browse(vals.get("partner_id")).city
+            comuna_obj = self.env["boleta.comuna"]
+
+            if comuna_name:
+                # Buscar comuna existente
+                comuna = comuna_obj.search([("name", "=", comuna_name)], limit=1)
+
+                if not comuna:
+                # Crear comuna automáticamente si no existe
+                    comuna = comuna_obj.create({"name": comuna_name})
+                    _logger.info(f"Comuna creada automáticamente: {comuna_name}")
+
+                # Asociar la boleta a la comuna encontrada/creada
+                vals["comuna_id"] = comuna.id
+            else:
+                _logger.warning("No se especificó comuna en la boleta.")
+
+            return super(BoletaHonorarios, self).create(vals)
+
+        except Exception as e:
+            _logger.error(f"Error asociando comuna a boleta: {e}")
+            raise UserError(_("No se pudo asociar una comuna a la boleta. Contacta al administrador."))
+
+    def write(self, vals):
+        """Sobrescribimos write para actualizar comuna si cambia el partner o comuna"""
+        try:
+            res = super(BoletaHonorarios, self).write(vals)
+
+            if "partner_id" in vals or "comuna" in vals:
+                for boleta in self:
+                    comuna_name = vals.get("comuna") or boleta.partner_id.city
+                    if comuna_name:
+                        comuna = self.env["boleta.comuna"].search([("name", "=", comuna_name)], limit=1)
+                        if not comuna:
+                            comuna = self.env["boleta.comuna"].create({"name": comuna_name})
+                        boleta.comuna_id = comuna.id
+
+            return res
+
+        except Exception as e:
+            _logger.error(f"Error actualizando comuna en boleta: {e}")
+            raise UserError(_("No se pudo actualizar la comuna de la boleta."))
