@@ -24,7 +24,7 @@
 
   <!-- Vista LISTA -->
   <record id="view_boleta_comuna_list" model="ir.ui.view">
-    <field name="name">boleta.comuna.tree</field>
+    <field name="name">boleta.comuna.list</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
       <list>
