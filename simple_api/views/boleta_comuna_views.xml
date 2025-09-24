@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <!-- List View -->
+
+  <!-- Vista LISTA -->
   <record id="view_boleta_comuna_list" model="ir.ui.view">
     <field name="name">boleta.comuna.list</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
       <list string="Comunas">
         <field name="name"/>
-        <field name="boleta_ids" widget="many2many_tags" options="{'no_create': True}"/>
+        <field name="boletas_count"/>
       </list>
     </field>
   </record>
 
-  <!-- Form View -->
+  <!-- Vista FORMULARIO -->
   <record id="view_boleta_comuna_form" model="ir.ui.view">
     <field name="name">boleta.comuna.form</field>
     <field name="model">boleta.comuna</field>
@@ -21,15 +22,16 @@
         <sheet>
           <group>
             <field name="name"/>
+            <field name="boletas_count" readonly="1"/>
           </group>
           <notebook>
             <page string="Boletas">
               <field name="boleta_ids">
-                <tree string="Boletas">
+                <list>
                   <field name="numero_boleta"/>
                   <field name="partner_id"/>
                   <field name="state"/>
-                </tree>
+                </list>
               </field>
             </page>
           </notebook>
@@ -37,4 +39,5 @@
       </form>
     </field>
   </record>
+
 </odoo>
