@@ -23,15 +23,15 @@
   </record>
 
   <!-- Vista LISTA -->
-  <record id="view_boleta_comuna_tree" model="ir.ui.view">
+  <record id="view_boleta_comuna_list" model="ir.ui.view">
     <field name="name">boleta.comuna.tree</field>
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
-      <tree>
+      <list>
         <field name="codigo"/>
         <field name="name"/>
         <field name="boletas_count"/>
-      </tree>
+      </list>
     </field>
   </record>
 
