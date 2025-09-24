@@ -8,7 +8,7 @@
 
   <!-- Submenú: Boletas -->
   <menuitem id="menu_boleta_honorarios"
-            name="Boletas"
+            name="Boletas de Honorarios"
             parent="menu_boleta_honorarios_root"
             action="action_boleta_honorarios"
             sequence="10"/>
