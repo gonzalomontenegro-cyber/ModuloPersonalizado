@@ -448,19 +448,19 @@ class BoletaHonorarios(models.Model):
             raise UserError(_("No se pudo asociar una comuna a la boleta. Contacta al administrador."))
         return records
 
-def write(self, vals):
-    res = super(BoletaHonorarios, self).write(vals)
-    comuna_obj = self.env['boleta.comuna']
-    for boleta in self:
-        try:
-            if 'partner_id' in vals or not boleta.comuna_id:
-                if boleta.partner_id and boleta.partner_id.city:
-                    comuna_name = boleta.partner_id.city.strip()
-                    comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
+    def write(self, vals):
+        res = super(BoletaHonorarios, self).write(vals)
+        comuna_obj = self.env['boleta.comuna']
+        for boleta in self:
+            try:
+                if 'partner_id' in vals or not boleta.comuna_id:
+                    if boleta.partner_id and boleta.partner_id.city:
+                        comuna_name = boleta.partner_id.city.strip()
+                        comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
                     if not comuna:
                         comuna = comuna_obj.create({'name': comuna_name})
                     boleta.comuna_id = comuna.id
-        except Exception as e:
-            _logger.error(f"Error actualizando comuna en boleta {boleta.id}: {e}")
+            except Exception as e:
+                _logger.error(f"Error actualizando comuna en boleta {boleta.id}: {e}")
             raise UserError(_("No se pudo actualizar la comuna de la boleta."))
-    return res
+        return res
