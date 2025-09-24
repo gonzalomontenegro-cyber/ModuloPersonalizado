@@ -21,7 +21,7 @@
       <form string="Comuna">
         <sheet>
           <group>
-            <field name="nombre"/>
+            <field name="name"/>
           </group>
           <notebook>
             <page string="Boletas">
