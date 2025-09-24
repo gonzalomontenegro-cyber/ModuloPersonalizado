@@ -439,28 +439,43 @@ class BoletaHonorarios(models.Model):
                 if not record.comuna_id and record.partner_id and record.partner_id.city:
                     comuna_name = record.partner_id.city.strip()
                     comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
-                if not comuna:
-                    comuna = comuna_obj.create({'name': comuna_name})
-                    _logger.info(f"Comuna creada automáticamente: {comuna_name}")
-                record.comuna_id = comuna.id
-            except Exception as e:
-                _logger.error(f"Error asociando comuna a boleta {record.id}: {e}")
-            raise UserError(_("No se pudo asociar una comuna a la boleta. Contacta al administrador."))
-        return records
-
-    def write(self, vals):
-        res = super(BoletaHonorarios, self).write(vals)
-        comuna_obj = self.env['boleta.comuna']
-        for boleta in self:
-            try:
-                if 'partner_id' in vals or not boleta.comuna_id:
-                    if boleta.partner_id and boleta.partner_id.city:
-                        comuna_name = boleta.partner_id.city.strip()
-                        comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
                     if not comuna:
                         comuna = comuna_obj.create({'name': comuna_name})
-                    boleta.comuna_id = comuna.id
+                        _logger.info(f"Comuna creada automáticamente: {comuna_name}")
+                    record.comuna_id = comuna.id
+            
+            # Sincronizar receptor_comuna con el nombre de comuna_id
+                if record.comuna_id:
+                    record.receptor_comuna = record.comuna_id.name
+
             except Exception as e:
-                _logger.error(f"Error actualizando comuna en boleta {boleta.id}: {e}")
+                _logger.error(f"Error asociando comuna a boleta {record.id}: {e}")
+                raise UserError(_("No se pudo asociar una comuna a la boleta. Contacta al administrador."))
+
+        return records
+
+
+def write(self, vals):
+    res = super(BoletaHonorarios, self).write(vals)
+    comuna_obj = self.env['boleta.comuna']
+    for boleta in self:
+        try:
+            # Solo si cambió partner_id o comuna_id no está seteada
+            if ('partner_id' in vals or 'comuna_id' in vals) or not boleta.comuna_id:
+                if boleta.partner_id and boleta.partner_id.city:
+                    comuna_name = boleta.partner_id.city.strip()
+                    comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
+                    if not comuna:
+                        comuna = comuna_obj.create({'name': comuna_name})
+                        _logger.info(f"Comuna creada automáticamente: {comuna_name}")
+                    boleta.comuna_id = comuna.id
+            
+            # Sincronizar receptor_comuna con el nombre de comuna_id
+            if boleta.comuna_id:
+                boleta.receptor_comuna = boleta.comuna_id.name
+
+        except Exception as e:
+            _logger.error(f"Error actualizando comuna en boleta {boleta.id}: {e}")
             raise UserError(_("No se pudo actualizar la comuna de la boleta."))
-        return res
+
+    return res
