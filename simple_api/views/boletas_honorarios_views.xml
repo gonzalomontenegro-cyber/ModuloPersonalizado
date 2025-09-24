@@ -125,9 +125,4 @@
             name="Boletas de Honorarios"
             sequence="5"
             action="action_boleta_honorarios"/>
-
-  <menuitem id="menu_boleta_comuna_root"
-            name="Comunas"
-            parent="menu_boleta_honorarios_root"
-            sequence="10"/>
 </odoo>
