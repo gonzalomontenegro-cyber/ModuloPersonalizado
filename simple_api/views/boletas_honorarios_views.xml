@@ -112,12 +112,12 @@
     <field name="view_mode">list,form</field>
   </record>
 
-  <!-- ACCIÓN COMUNAS -->
+ <!-- ACCIÓN COMUNAS -->
   <record id="action_boleta_comuna" model="ir.actions.act_window">
     <field name="name">Comunas</field>
     <field name="res_model">boleta.comuna</field>
     <field name="view_mode">list,form</field>
-    <field name="view_id" ref="view_boleta_comuna_list"/>
+    <field name="view_id" ref="simple_api.view_boleta_comuna_list"/>
   </record>
 
   <!-- MENÚS -->
