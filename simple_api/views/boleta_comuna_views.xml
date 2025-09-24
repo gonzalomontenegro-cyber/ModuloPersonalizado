@@ -5,10 +5,10 @@
   <field name="name">boleta.comuna.list</field>
   <field name="model">boleta.comuna</field>
   <field name="arch" type="xml">
-    <tree string="Comunas">
+    <list string="Comunas">
       <field name="name"/>
       <field name="boleta_ids"/>
-    </tree>
+    </list>
   </field>
 </record>
 
@@ -25,11 +25,11 @@
         <notebook>
           <page string="Boletas">
             <field name="boleta_ids">
-              <tree string="Boletas">
+              <list string="Boletas">
                 <field name="numero_boleta"/>
                 <field name="partner_id"/>
                 <field name="state"/>
-              </tree>
+              </list>
             </field>
           </page>
         </notebook>
