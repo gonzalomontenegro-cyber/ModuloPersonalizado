@@ -8,7 +8,7 @@
     <field name="arch" type="xml">
       <kanban>
         <templates>
-          <t t-name="kanban-box">
+          <t t-name="card">
             <div class="oe_kanban_global_click o_kanban_card">
               <div class="o_primary">
                 <strong><field name="name"/></strong>
