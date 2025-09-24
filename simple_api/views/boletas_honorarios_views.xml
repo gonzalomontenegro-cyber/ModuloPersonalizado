@@ -120,9 +120,4 @@
     <field name="view_id" ref="view_boleta_comuna_list"/>
   </record>
 
-  <!-- MENÚS -->
-  <menuitem id="menu_boleta_honorarios_root"
-            name="Boletas de Honorarios"
-            sequence="5"
-            action="action_boleta_honorarios"/>
 </odoo>

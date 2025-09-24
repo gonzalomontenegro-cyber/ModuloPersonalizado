@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!-- Menú raíz: Boletas de Honorarios -->
+  <menuitem id="menu_boleta_honorarios_root"
+            name="Boletas de Honorarios"
+            sequence="10" />
+
+  <!-- Submenú: Comunas (solo el menú, la acción se define en boleta_comuna_views) -->
+  <menuitem id="menu_boleta_comuna_root"
+            name="Comunas"
+            parent="menu_boleta_honorarios_root"
+            sequence="20"
+            action="action_boleta_comuna"/>
+</odoo>

@@ -70,11 +70,4 @@
     <field name="context">{}</field>
   </record>
 
-  <!-- Menú para Comunas, bajo Boletas de Honorarios -->
-  <menuitem id="menu_boleta_comuna_root"
-            name="Comunas"
-            parent="menu_boleta_honorarios_root"
-            sequence="20"
-            action="action_boleta_comuna"/>
-
 </odoo>
