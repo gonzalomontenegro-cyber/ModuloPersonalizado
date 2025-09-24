@@ -430,7 +430,7 @@ class BoletaHonorarios(models.Model):
         resto = suma % 11
         dv_calc = '0' if resto == 0 else 'K' if resto == 1 else str(11 - resto)
         return dv == dv_calc
-    @api.model
+    @api.model_create_multi
     def create(self, vals_list):
         records = super(BoletaHonorarios, self).create(vals_list)
         comuna_obj = self.env['boleta.comuna']
