@@ -14,7 +14,7 @@ class BoletaComuna(models.Model):
 
     name = fields.Char(string='Nombre', required=True, index=True)
     boleta_ids = fields.One2many('boleta.honorarios', 'comuna_id', string='Boletas')
-
+    boletas_count = fields.Integer(string='Cantidad de Boletas', compute='_compute_boletas_count')
 
     _sql_constraints = [
     ('boleta_comuna_name_uniq', 'unique(name)', 'La comuna ya existe.'),
@@ -39,7 +39,11 @@ def get_or_create_by_name(self, name):
         _logger.error('Error creating comuna %s: %s', name, e)
         # No lanzamos UserError para no cortar procesos automáticos; devolvemos vacío
         return self.browse()
-
+    
+@api.depends('boleta_ids')
+def compute_boletas_count(self):
+    for comuna in self:
+        comuna.boletas_count = len(comuna.boleta_ids)
 
 @api.model
 def agrupar_boletas_por_comuna(self):
