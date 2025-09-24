@@ -1,63 +1,53 @@
-from odoo import models, fields, api
+# models/comuna.py
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
-import requests
 import logging
+
 
 _logger = logging.getLogger(__name__)
 
 
 class BoletaComuna(models.Model):
     _name = 'boleta.comuna'
-    _description = 'Comuna'
-    _rec_name = 'nombre'  # Para mostrar 'nombre' en vez de 'name' por defecto
+    _description = 'Comuna para Boletas de Honorarios'
 
-    nombre = fields.Char(string="Nombre", required=True)
-    boleta_ids = fields.One2many('boleta.honorarios', 'comuna_id', string="Boletas Asociadas")
+
+    name = fields.Char(string='Nombre', required=True, index=True)
+    boleta_ids = fields.One2many('boleta.honorarios', 'comuna_id', string='Boletas')
+
 
     _sql_constraints = [
-        ('nombre_unique', 'unique(nombre)', 'El nombre de la comuna debe ser único.'),
+    ('boleta_comuna_name_uniq', 'unique(name)', 'La comuna ya existe.'),
     ]
 
 
-class BoletaHonorarios(models.Model):
-    _inherit = 'boleta.honorarios'
+@api.model
+def get_or_create_by_name(self, name):
+    """Devuelve la comuna por nombre (case-insensitive). Si no existe, la crea.
+    Retorna recordset vacío si name is falsy."""
+    if not name:
+        return self.browse()
+    name = name.strip()
+    comuna = self.search([('name', 'ilike', name)], limit=1)
+    if comuna:
+        return comuna
+    # Crear con sudo para evitar problemas de permisos en crons o usuarios limitados
+    try:
+        comuna = self.sudo().create({'name': name})
+        return comuna
+    except Exception as e:
+        _logger.error('Error creating comuna %s: %s', name, e)
+        # No lanzamos UserError para no cortar procesos automáticos; devolvemos vacío
+        return self.browse()
 
-    comuna_id = fields.Many2one('boleta.comuna', string="Comuna Asociada")
 
-    @api.model
-    def obtener_comunas_simpleapi(self):
-        """Consume la API de SimpleAPI y guarda comunas nuevas en boleta.comuna"""
-        url = "https://servicios.simpleapi.cl/api/bhe/listarComunas"
-
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            comunas = response.json()
-
-            for comuna in comunas:
-                nombre_comuna = comuna.get("nombre", "").strip()
-                if nombre_comuna:
-                    existing = self.env['boleta.comuna'].search([('nombre', '=', nombre_comuna)], limit=1)
-                    if not existing:
-                        self.env['boleta.comuna'].create({'nombre': nombre_comuna})
-
-            _logger.info("✅ Comunas cargadas correctamente desde SimpleAPI.")
-
-        except Exception as e:
-            _logger.error("❌ Error al obtener comunas desde SimpleAPI: %s", e)
-            raise UserError(f"Error al obtener comunas: {e}")
-
-    def agrupar_boletas_por_comuna(self):
-        """Asigna las boletas emitidas a su comuna correspondiente"""
-        self.obtener_comunas_simpleapi()  # Asegura comunas actualizadas
-
-        todas_boletas = self.env['boleta.honorarios'].search([('state', '=', 'emitted')])
-
-        for boleta in todas_boletas:
-            nombre_comuna = boleta.receptor_comuna.strip() if boleta.receptor_comuna else None
-            if not nombre_comuna:
-                continue
-
-            comuna = self.env['boleta.comuna'].search([('nombre', '=', nombre_comuna)], limit=1)
-            if comuna:
-                boleta.comuna_id = comuna.id
+@api.model
+def agrupar_boletas_por_comuna(self):
+    """Recorre boletas sin comuna y las asocia según su nombre de comuna.
+    Útil para cron o para ejecutar después de importar masivamente boletas.
+    """
+    Boleta = self.env['boleta.honorarios']
+    boletas = Boleta.search([('comuna_id', '=', False)])
+    _logger.info('Agrupar %s boletas sin comuna', len(boletas))
+    boletas._associate_comuna()
+    return True

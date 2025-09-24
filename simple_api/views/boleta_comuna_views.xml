@@ -1,34 +1,33 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-  <record id="view_boleta_comuna_list" model="ir.ui.view">
-    <field name="name">boleta.comuna.list</field>
-    <field name="model">boleta.comuna</field>
-    <field name="arch" type="xml">
-      <list string="Comunas">
-        <field name="nombre"/>
-        <field name="boleta_ids"/>
-      </list>
-    </field>
-  </record>
+<!-- views/boleta_comuna_views.xml (fragment) -->
+<record id="view_boleta_comuna_list" model="ir.ui.view">
+  <field name="arch" type="xml">
+    <list string="Comunas">
+      <field name="name"/>
+      <field name="boleta_ids"/>
+    </list>
+  </field>
+</record>
 
-  <record id="view_boleta_comuna_form" model="ir.ui.view">
-    <field name="name">boleta.comuna.form</field>
-    <field name="model">boleta.comuna</field>
-    <field name="arch" type="xml">
-      <form string="Comuna">
-        <sheet>
-          <group>
-            <field name="nombre"/>
-            <field name="boleta_ids"/>
-          </group>
-        </sheet>
-      </form>
-    </field>
-  </record>
 
-  <record id="action_boleta_comuna" model="ir.actions.act_window">
-    <field name="name">Comunas</field>
-    <field name="res_model">boleta.comuna</field>
-    <field name="view_mode">list,form</field>
-  </record>
-</odoo>
+<record id="view_boleta_comuna_form" model="ir.ui.view">
+  <field name="arch" type="xml">
+    <form string="Comuna">
+      <sheet>
+        <group>
+          <field name="name"/>
+        </group>
+        <notebook>
+          <page string="Boletas">
+            <field name="boleta_ids">
+              <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="state"/>
+              </list>
+            </field>
+          </page>
+        </notebook>
+      </sheet>
+    </form>
+  </field>
+</record>
