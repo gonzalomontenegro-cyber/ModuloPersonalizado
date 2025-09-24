@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+  <!-- FORMULARIO BOLETA DE HONORARIOS -->
   <record id="view_boleta_honorarios_form" model="ir.ui.view">
     <field name="name">boleta.honorarios.form</field>
     <field name="model">boleta.honorarios</field>
@@ -7,13 +8,13 @@
       <form string="Boleta de Honorarios">
         <header>
           <button name="action_emitir_boleta" string="Emitir Boleta" type="object" class="btn-primary"/>
-          <!-- Botón legacy opcional -->
           <button name="action_anular_boleta" string="Anular (legacy)" type="object" class="btn-secondary"
                   confirm="¿Está seguro de anular esta boleta (legacy)?"/>
           <button name="action_anular_boleta_path" string="Anular por folio" type="object" class="btn-danger"
                   confirm="Se anulará la boleta en SII vía SimpleAPI usando el motivo seleccionado. ¿Continuar?"/>
           <field name="state" widget="statusbar" statusbar_visible="draft,processing,emitted,downloaded,cancelled,error"/>
         </header>
+
         <sheet>
           <group>
             <group string="Información General">
@@ -43,7 +44,7 @@
             <group>
               <field name="receptor_direccion" placeholder="Dirección completa del receptor"/>
               <field name="receptor_region"/>
-              <field name="receptor_comuna" placeholder="Comuna del receptor"/>
+              <field name="comuna_id" placeholder="Comuna del receptor"/>
             </group>
           </group>
 
@@ -56,11 +57,8 @@
             <field name="email_destinatario" placeholder="correo@dominio.cl" widget="email" required="1"/>
           </group>
 
-          <!-- Apartado de Anulación sin attrs problemáticos -->
           <group string="Anulación">
-            <group>
-              <field name="motivo_anulacion"/>
-            </group>
+            <field name="motivo_anulacion"/>
             <span>Para anular, seleccione el motivo y presione 'Anular por folio'. La acción validará el estado y el folio.</span>
           </group>
 
@@ -73,6 +71,7 @@
             </page>
           </notebook>
         </sheet>
+
         <div class="oe_chatter">
           <field name="message_follower_ids"/>
           <field name="activity_ids"/>
@@ -82,6 +81,7 @@
     </field>
   </record>
 
+  <!-- LISTADO BOLETA DE HONORARIOS -->
   <record id="view_boleta_honorarios_list" model="ir.ui.view">
     <field name="name">boleta.honorarios.list</field>
     <field name="model">boleta.honorarios</field>
@@ -94,6 +94,7 @@
         <field name="numero_boleta"/>
         <field name="fecha_emision"/>
         <field name="partner_id"/>
+        <field name="comuna_id"/>
         <field name="receptor_nombre"/>
         <field name="valor_bruto" widget="monetary"/>
         <field name="email_destinatario"/>
@@ -103,39 +104,14 @@
     </field>
   </record>
 
+  <!-- ACCIÓN BOLETA -->
   <record id="action_boleta_honorarios" model="ir.actions.act_window">
     <field name="name">Boletas de Honorarios</field>
     <field name="res_model">boleta.honorarios</field>
     <field name="view_mode">list,form</field>
   </record>
 
-<!-- views/boleta_honorarios_views.xml (fragment) -->
-<record id="view_boleta_honorarios_form" model="ir.ui.view">
-  <field name="arch" type="xml">
-    <form string="Boleta Honorarios">
-      <!-- ubica el group adecuado en tu vista y añade: -->
-      <group name="receiver_info" string="Receiver">
-        <field name="partner_id"/>
-        <field name="comuna_id"/>
-      </group>
-
-    </form>
-  </field>
-</record>
-
-
-<record id="view_boleta_honorarios_list" model="ir.ui.view">
-  <field name="arch" type="xml">
-    <list string="Boletas">
-      <field name="name"/>
-      <field name="partner_id"/>
-      <field name="comuna_id"/>
-      <field name="state"/>
-    </list>
-  </field>
-</record>
-
-  <!-- Acción para abrir boleta.comuna -->
+  <!-- ACCIÓN COMUNAS -->
   <record id="action_boleta_comuna" model="ir.actions.act_window">
     <field name="name">Comunas</field>
     <field name="res_model">boleta.comuna</field>
@@ -143,16 +119,14 @@
     <field name="view_id" ref="view_boleta_comuna_list"/>
   </record>
 
-  <!-- Menú raíz con acción asignada -->
+  <!-- MENÚS -->
   <menuitem id="menu_boleta_honorarios_root"
             name="Boletas de Honorarios"
             sequence="5"
             action="action_boleta_honorarios"/>
 
-  <!-- Submenús -->
   <menuitem id="menu_boleta_comuna_root"
             name="Comunas"
             parent="menu_boleta_honorarios_root"
             sequence="10"/>
-
 </odoo>
