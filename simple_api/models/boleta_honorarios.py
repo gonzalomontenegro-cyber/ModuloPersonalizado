@@ -431,7 +431,6 @@ class BoletaHonorarios(models.Model):
         dv_calc = '0' if resto == 0 else 'K' if resto == 1 else str(11 - resto)
         return dv == dv_calc
     @api.model
-    @api.model
     def create(self, vals):
         record = super(BoletaHonorarios, self).create(vals)
         try:
