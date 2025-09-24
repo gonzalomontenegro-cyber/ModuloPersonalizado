@@ -7,7 +7,7 @@
     <field name="model">boleta.comuna</field>
     <field name="arch" type="xml">
       <list string="Comunas">
-        <field name="nombre"/>
+        <field name="name"/>
         <field name="boleta_ids"/>
       </list>
     </field>
