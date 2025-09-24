@@ -19,8 +19,8 @@
     'license': 'LGPL-3',
     'depends': ['base', 'account', 'contacts', 'mail','web'],
     'data': [
+        'views/boleta_comuna_views.xml', # primero comunas
         'views/boletas_honorarios_views.xml', # luego boletas (que usa la acción de comunas)
-        'views/boleta_comuna_views.xml',       # primero comunas
         'views/res_config_settings_views.xml',
         #'data/ir_cron_data.xml',
         'security/ir.model.access.csv',
