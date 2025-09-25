@@ -45,12 +45,8 @@ class BoletaComuna(models.Model):
         timeout = int(icp.get_param('boleta_honorarios.simpleapi_timeout') or 30)
         return base_url.rstrip('/'), api_key, timeout
 
-    
-def sync_comunas(self):
-        """Sincroniza comunas desde la API externa de SimpleAPI (listarComunas).
-        Mantiene self.ensure_one() para conservar el comportamiento actual.
-        Implementa varios intentos de autenticación para evitar 401 por formato del header.
-        """
+    def sync_comunas(self):
+        """Sincroniza comunas desde la API externa de SimpleAPI (listarComunas)."""
         self.ensure_one()
         base_url, api_key, timeout = self._get_simpleapi_settings()
         url = f"{base_url}/bhe/listarComunas"
@@ -58,24 +54,23 @@ def sync_comunas(self):
         headers_base = {'Accept': 'application/json'}
         attempts = []
 
-        # preparar intentos de autenticación
         api_key_clean = (api_key or '').strip()
         if not api_key_clean:
             attempts.append({'name': 'no_auth', 'headers': headers_base.copy()})
         else:
-            # 1) Authorization tal cual (por si el usuario guardó 'Bearer ...' o formato custom)
+            # 1) Authorization tal cual
             h_as_is = headers_base.copy()
             h_as_is['Authorization'] = api_key_clean
             attempts.append({'name': 'auth_as_is', 'headers': h_as_is})
 
-            # 2) Authorization: Bearer <token> (si no empieza por Bearer)
+            # 2) Authorization: Bearer <token>
             if not api_key_clean.lower().startswith('bearer '):
                 h_bearer = headers_base.copy()
                 h_bearer['Authorization'] = f"Bearer {api_key_clean}"
                 attempts.append({'name': 'auth_bearer', 'headers': h_bearer})
 
-            # 3) x-api-key header con el token puro
-            token_only = api_key_clean.split(None,1)[1] if api_key_clean.lower().startswith('bearer ') and len(api_key_clean.split(None,1))>1 else api_key_clean
+            # 3) x-api-key header con token puro
+            token_only = api_key_clean.split(None, 1)[1] if api_key_clean.lower().startswith('bearer ') and len(api_key_clean.split(None, 1)) > 1 else api_key_clean
             h_x = headers_base.copy()
             h_x['x-api-key'] = token_only
             attempts.append({'name': 'x-api-key', 'headers': h_x})
@@ -120,7 +115,7 @@ def sync_comunas(self):
                     if codigo:
                         vals['codigo'] = str(codigo)
 
-                    comuna_existente = self.search([('codigo','=', vals.get('codigo'))], limit=1) if vals.get('codigo') else self.search([('name','=', nombre)], limit=1)
+                    comuna_existente = self.search([('codigo', '=', vals.get('codigo'))], limit=1) if vals.get('codigo') else self.search([('name', '=', nombre)], limit=1)
                     if comuna_existente:
                         comuna_existente.write(vals)
                     else:
@@ -139,7 +134,6 @@ def sync_comunas(self):
             _logger.warning('Modo %s respuesta inesperada HTTP %s: %s', name, response.status_code, (response.text or '')[:300])
             last_exc = UserError(_('Error al obtener comunas desde SimpleAPI: %s') % response.status_code)
 
-        # si todos los intentos fallaron, elevar último error
         if isinstance(last_exc, Exception):
             raise last_exc
         raise UserError(_('No se pudo sincronizar comunas: respuesta desconocida de la API.'))
