@@ -3,6 +3,7 @@ import requests
 import json
 import base64
 import time
+import hashlib
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 import logging
@@ -10,10 +11,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 def _mask_key(key: str, show_start: int = 6, show_end: int = 4) -> str:
-    """
-    Enmascara una API Key, dejando ver los primeros y últimos caracteres.
-    Evita exponer secretos completos en logs en producción.
-    """
+    """Enmascara una API Key, dejando ver los primeros y últimos caracteres."""
     try:
         if not key:
             return ''
@@ -24,20 +22,21 @@ def _mask_key(key: str, show_start: int = 6, show_end: int = 4) -> str:
     except Exception:
         return '******'
 
+def _encrypt_sha256(text: str) -> str:
+    """Encripta un texto usando SHA-256 y retorna el hash hexadecimal."""
+    if not text:
+        return ''
+    try:
+        return hashlib.sha256(text.encode('utf-8')).hexdigest()
+    except Exception:
+        return '***encrypted***'
+
 class BoletaHonorarios(models.Model):
     _name = 'boleta.honorarios'
     _description = 'Boleta de Honorarios SimpleAPI'
     _order = 'fecha_emision desc'
     _rec_name = 'numero_boleta'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-
-    # Nuevo campo para asociar con comuna
-    comuna_id = fields.Many2one(
-        "boleta.comuna",
-        string="Comuna",
-        ondelete="set null",
-        help="Comuna asociada automáticamente al emitir la boleta."
-    )
 
     # Campos básicos
     numero_boleta = fields.Char('Número de Boleta', readonly=True, tracking=True)
@@ -50,6 +49,9 @@ class BoletaHonorarios(models.Model):
         ('error', 'Error'),
         ('cancelled', 'Anulada')
     ], string='Estado', default='draft', tracking=True)
+
+    # Moneda
+    currency_id = fields.Many2one('res.currency', string='Moneda', default=lambda self: self.env.company.currency_id)
 
     # Datos del emisor
     rut_usuario = fields.Char('RUT Usuario', required=True, help='RUT del usuario que emite la boleta')
@@ -76,12 +78,52 @@ class BoletaHonorarios(models.Model):
         ('9', 'Araucanía'), ('10', 'Los Lagos'), ('11', 'Aysén'), ('12', 'Magallanes'),
         ('13', 'Metropolitana'), ('14', 'Los Ríos'), ('15', 'Arica y Parinacota'), ('16', 'Ñuble')
     ], string='Región Receptor', default='13', required=True)
-    receptor_comuna = fields.Char('Comuna Receptor')
+    receptor_comuna = fields.Char('Comuna Receptor', required=True)
 
-    # Detalles de la prestación
-    descripcion_servicio = fields.Text('Descripción del Servicio', required=True)
-    valor_bruto = fields.Monetary('Valor Bruto', required=True, currency_field='currency_id', tracking=True)
-    currency_id = fields.Many2one('res.currency', string='Moneda', default=lambda self: self.env.company.currency_id, required=True,)
+    # Selector de líneas + campos condicionales
+    lineas_selector = fields.Selection([
+        ('1', '1 línea'),
+        ('2', '2 líneas'),
+        ('3', '3 líneas'),
+        ('4', '4 líneas'),
+        ('5', '5 líneas'),
+        ('6', '6 líneas'),
+        ('7', '7 líneas'),
+        ('8', '8 líneas'),
+        ('9', '9 líneas'),
+        ('10', '10 líneas'),
+    ], string='Número de Líneas', default='1')
+
+    # Campos para las 10 líneas posibles
+    descripcion_1 = fields.Char('Descripción Línea 1')
+    valor_1 = fields.Monetary('Valor Línea 1', currency_field='currency_id')
+    
+    descripcion_2 = fields.Char('Descripción Línea 2')
+    valor_2 = fields.Monetary('Valor Línea 2', currency_field='currency_id')
+    
+    descripcion_3 = fields.Char('Descripción Línea 3')
+    valor_3 = fields.Monetary('Valor Línea 3', currency_field='currency_id')
+    
+    descripcion_4 = fields.Char('Descripción Línea 4')
+    valor_4 = fields.Monetary('Valor Línea 4', currency_field='currency_id')
+    
+    descripcion_5 = fields.Char('Descripción Línea 5')
+    valor_5 = fields.Monetary('Valor Línea 5', currency_field='currency_id')
+    
+    descripcion_6 = fields.Char('Descripción Línea 6')
+    valor_6 = fields.Monetary('Valor Línea 6', currency_field='currency_id')
+    
+    descripcion_7 = fields.Char('Descripción Línea 7')
+    valor_7 = fields.Monetary('Valor Línea 7', currency_field='currency_id')
+    
+    descripcion_8 = fields.Char('Descripción Línea 8')
+    valor_8 = fields.Monetary('Valor Línea 8', currency_field='currency_id')
+    
+    descripcion_9 = fields.Char('Descripción Línea 9')
+    valor_9 = fields.Monetary('Valor Línea 9', currency_field='currency_id')
+    
+    descripcion_10 = fields.Char('Descripción Línea 10')
+    valor_10 = fields.Monetary('Valor Línea 10', currency_field='currency_id')
 
     # Respuesta y archivo
     response_data = fields.Text('Respuesta API')
@@ -96,7 +138,7 @@ class BoletaHonorarios(models.Model):
     fecha_procesamiento = fields.Datetime('Fecha Procesamiento')
     intentos = fields.Integer('Intentos', default=0)
 
-    # Motivo de anulación para endpoint con path params
+    # Motivo de anulación
     motivo_anulacion = fields.Selection([
         ('1', '1: No se efectuó el pago'),
         ('2', '2: No se efectuó la prestación'),
@@ -128,21 +170,17 @@ class BoletaHonorarios(models.Model):
 
     @api.model
     def get_simpleapi_config(self):
+        """Obtiene configuración desde parámetros del sistema - Solo API Key configurada"""
         config = self.env['ir.config_parameter'].sudo()
-        api_key = config.get_param('boleta_honorarios.simpleapi_api_key', '4284-W270-6392-7800-2954')
+        api_key = config.get_param('boleta_honorarios.simpleapi_api_key')
+        if not api_key:
+            raise UserError(_('Debe configurar la API Key de SimpleAPI en Configuración → Boletas Honorarios'))
+        
         base_url = config.get_param('boleta_honorarios.simpleapi_base_url', 'https://servicios.simpleapi.cl/api')
         timeout = int(config.get_param('boleta_honorarios.simpleapi_timeout', '30'))
         
-        # CAMBIO: Eliminar normalización automática Bearer
-        # if api_key and not api_key.strip().lower().startswith('bearer '):
-        #     api_key = f"Bearer {api_key.strip()}"
-
         _logger.info(f"[BHE] Config SimpleAPI base_url={base_url} api_key={_mask_key(api_key)} timeout={timeout}")
-        return {
-            'api_key': api_key.strip() if api_key else '',  # Solo limpiar espacios
-            'base_url': base_url,
-            'timeout': timeout
-        }  # [1][3]
+        return {'api_key': api_key, 'base_url': base_url, 'timeout': timeout}
 
     def action_emitir_boleta(self):
         for record in self:
@@ -151,14 +189,13 @@ class BoletaHonorarios(models.Model):
                 record.intentos += 1
                 record.fecha_procesamiento = fields.Datetime.now()
                 record.message_post(body="Iniciando emisión de boleta de honorarios...")
-                if not record.descripcion_servicio:
-                    raise UserError(_('Debe agregar una descripción del servicio'))
-                if record.valor_bruto <= 0:
-                    raise UserError(_('El valor bruto debe ser mayor a cero'))
+
                 if not record.email_destinatario or '@' not in record.email_destinatario:
                     raise UserError(_('Debe indicar un correo destinatario válido (ej: correo@dominio.cl)'))
+
                 data = record._prepare_api_data()
                 response = record._call_simpleapi(data)
+
                 if response.get('success') or response.get('numeroDocumento') or response.get('numero') or response.get('folio'):
                     record._process_successful_response(response)
                 else:
@@ -171,6 +208,17 @@ class BoletaHonorarios(models.Model):
 
     def _prepare_api_data(self):
         self.ensure_one()
+        # Construir Detalles solo con líneas que tengan descripción y valor
+        detalles = []
+        for i in range(1, 11):
+            descripcion = getattr(self, f'descripcion_{i}', '')
+            valor = getattr(self, f'valor_{i}', 0)
+            if descripcion and valor > 0:
+                detalles.append({'Nombre': descripcion, 'Valor': int(valor)})
+        
+        if not detalles:
+            raise UserError(_('Debe completar al menos una línea con descripción y valor'))
+        
         return {
             'RutUsuario': self.rut_usuario.replace('.', '').replace('-', ''),
             'PasswordSII': self.password_sii,
@@ -184,29 +232,35 @@ class BoletaHonorarios(models.Model):
                 'Region': int(self.receptor_region),
                 'Comuna': self.receptor_comuna
             },
-            'Detalles': [{'Nombre': self.descripcion_servicio, 'Valor': int(self.valor_bruto)}]
-        }  # [3]
+            'Detalles': detalles
+        }
 
     def _call_simpleapi(self, data):
         config = self.get_simpleapi_config()
         try:
-            # CAMBIO: Usar x-api-key en lugar de Authorization
             headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'x-api-key': config['api_key']
+                'Authorization': config['api_key']
             }
             url = f"{config['base_url']}/bhe/emitir"
-            _logger.info(f"🚀 [BHE] POST emitir -> {url} key={_mask_key(config['api_key'])}")
+            
+            # Log con datos cifrados para seguridad
+            rut_encrypted = _encrypt_sha256(data.get('RutUsuario', ''))
+            password_encrypted = _encrypt_sha256(data.get('PasswordSII', ''))
+            
+            _logger.info(f"🚀 [BHE] POST emitir -> {url} key={_mask_key(headers['Authorization'])} rut_sha256={rut_encrypted} password_sha256={password_encrypted}")
+            
             resp = requests.post(url, json=data, headers=headers, timeout=config['timeout'])
             _logger.info(f"[BHE] emitir status={resp.status_code} body={resp.text[:300]}")
+            
             if resp.status_code == 200:
                 return resp.json()
             raise UserError(_(f"Error en API: {resp.status_code} - {resp.text}"))
         except UserError:
             raise
         except Exception as e:
-            raise UserError(_(f"Error inesperado llamando SimpleAPI: {str(e)}"))  # [1][3]
+            raise UserError(_(f"Error inesperado llamando SimpleAPI: {str(e)}"))
 
     def _send_mail_via_simpleapi(self, folio: str, anio: int, email: str, wait_seconds: int = 1):
         self.ensure_one()
@@ -214,9 +268,8 @@ class BoletaHonorarios(models.Model):
             time.sleep(wait_seconds)
         config = self.get_simpleapi_config()
         url = f"{config['base_url']}/bhe/mail/{folio}/{anio}"
-        # CAMBIO: Usar x-api-key
         headers = {
-            'x-api-key': config['api_key'],
+            'Authorization': config['api_key'],
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': 'odoo-18-bhe'
@@ -226,9 +279,16 @@ class BoletaHonorarios(models.Model):
             'PasswordSII': self.password_sii,
             'Correo': email
         }
-        _logger.info(f"✉️ [BHE] POST mail {url} key={_mask_key(config['api_key'])} -> {payload}")
+        
+        # Log con datos cifrados
+        rut_encrypted = _encrypt_sha256(payload.get('RutUsuario', ''))
+        password_encrypted = _encrypt_sha256(payload.get('PasswordSII', ''))
+        
+        _logger.info(f"✉️ [BHE] POST mail {url} key={_mask_key(headers['Authorization'])} rut_sha256={rut_encrypted} password_sha256={password_encrypted} email={email}")
+        
         resp = requests.post(url, json=payload, headers=headers, timeout=config['timeout'])
         _logger.info(f"Mail status={resp.status_code} ct={resp.headers.get('Content-Type')} body={resp.text[:300]}")
+        
         if resp.status_code in (200, 202):
             self.message_post(body=f"Correo solicitado a SimpleAPI (folio {folio}): {email}", message_type='notification')
             return True
@@ -236,7 +296,7 @@ class BoletaHonorarios(models.Model):
             body=f"No se pudo solicitar envío por correo (POST). Status {resp.status_code}. Body: {resp.text[:300]}",
             message_type='comment'
         )
-        return False  # [3]
+        return False
 
     def _process_successful_response(self, response):
         self.ensure_one()
@@ -268,7 +328,7 @@ class BoletaHonorarios(models.Model):
         else:
             self.state = 'error'
             self.error_message = "Respuesta exitosa pero sin número de boleta"
-            self.message_post(body=f"Respuesta exitosa sin folio. Response: {self.response_data}", message_type='comment')  # [3]
+            self.message_post(body=f"Respuesta exitosa sin folio. Response: {self.response_data}", message_type='comment')
 
     def _process_error_response(self, response):
         self.ensure_one()
@@ -277,56 +337,15 @@ class BoletaHonorarios(models.Model):
                      response.get('descripcion') or response.get('detalle') or 'Error desconocido')
         self.error_message = error_msg
         self.response_data = json.dumps(response, indent=2)
-        self.message_post(body=f"Error en emisión: {error_msg}", message_type='comment')  # [3]
+        self.message_post(body=f"Error en emisión: {error_msg}", message_type='comment')
 
-    # Se remueven descargas/cron del viewer
     def _schedule_pdf_download(self):
         return
 
     def action_download_pdf(self):
         return
 
-    # LEGACY: anulación sin path (se conserva y se robustece)
-    def action_anular_boleta(self):
-        for record in self:
-            if record.state not in ['emitted', 'downloaded']:
-                raise UserError(_('Solo se pueden anular boletas emitidas'))
-            try:
-                config = record.get_simpleapi_config()
-                # CAMBIO: Usar x-api-key
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'x-api-key': config['api_key']
-                }
-                data = {
-                    'numeroDocumento': record.numero_boleta,
-                    'rutEmisor': record.rut_usuario.replace('.', '').replace('-', ''),
-                    'passwordSII': record.password_sii
-                }
-                url = f"{config['base_url']}/bhe/anular"
-                _logger.info(f"[BHE] POST legacy {url} key={_mask_key(config['api_key'])}")
-                resp = requests.post(url, json=data, headers=headers, timeout=config['timeout'])
-                body_preview = resp.text[:300] if hasattr(resp, 'text') else str(resp)[:300]
-                if resp.status_code == 200:
-                    ok = False
-                    try:
-                        j = resp.json()
-                        if isinstance(j, dict) and not j.get('error'):
-                            ok = True
-                    except Exception:
-                        txt = (resp.text or '').lower()
-                        ok = 'anulada' in txt or 'correctamente' in txt
-                    if ok:
-                        record.state = 'cancelled'
-                        record.message_post(body=f"Boleta {record.numero_boleta} anulada exitosamente (legacy). Resp: {body_preview}",
-                                            message_type='notification')
-                        continue
-                raise UserError(_('Error anulando boleta: %s') % body_preview)
-            except Exception as e:
-                raise UserError(_('Error anulando boleta: %s') % str(e))  # [4][3]
-
-    # NUEVO: Anulación con {folio}/{motivo} y body con credenciales, manejando texto plano
+    # Anulación con path params (único método)
     def action_anular_boleta_path(self):
         for record in self:
             if record.state not in ['emitted', 'downloaded']:
@@ -337,11 +356,10 @@ class BoletaHonorarios(models.Model):
                 raise UserError(_('Debe seleccionar un motivo válido (1, 2 o 3)'))
             try:
                 config = record.get_simpleapi_config()
-                # CAMBIO: Usar x-api-key
                 headers = {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'x-api-key': config['api_key'],
+                    'Authorization': config['api_key'],
                     'User-Agent': 'odoo-18-bhe'
                 }
                 folio = str(record.numero_boleta).strip()
@@ -351,66 +369,90 @@ class BoletaHonorarios(models.Model):
                     "RutUsuario": record.rut_usuario.replace('.', '').replace('-', ''),
                     "PasswordSII": record.password_sii
                 }
-                _logger.info(f"🧻 [BHE] POST {url} key={_mask_key(config['api_key'])} -> body={{'RutUsuario':'***','PasswordSII':'***'}}")
+                
+                # Log con datos cifrados
+                rut_encrypted = _encrypt_sha256(payload.get('RutUsuario', ''))
+                password_encrypted = _encrypt_sha256(payload.get('PasswordSII', ''))
+                
+                _logger.info(f"🧻 [BHE] POST {url} key={_mask_key(headers['Authorization'])} rut_sha256={rut_encrypted} password_sha256={password_encrypted}")
+                
                 resp = requests.post(url, json=payload, headers=headers, timeout=config['timeout'])
                 body_preview = resp.text[:300] if hasattr(resp, 'text') else str(resp)[:300]
                 _logger.info(f"[BHE] Anular status={resp.status_code} body={body_preview}")
-
+                
                 if resp.status_code in (200, 202):
-                    # Intentar JSON
                     data = None
                     try:
                         data = resp.json()
                     except Exception:
                         data = None
-
                     if isinstance(data, dict):
                         success_flag = str(data.get('success', 'true')).lower() in ('true', '1', 'yes')
                         has_error = bool(data.get('error'))
                         if success_flag and not has_error:
                             record.state = 'cancelled'
+                            # Notificación de éxito al anular
                             record.message_post(
-                                body=f"Boleta {folio} anulada exitosamente (motivo {motivo}). Resp: {data}",
+                                body=f"✅ Boleta {folio} anulada exitosamente (motivo {motivo}). La anulación se ha procesado correctamente en el SII.",
                                 message_type='notification'
                             )
-                            continue
+                            # También generar notificación en la interfaz
+                            return {
+                                'type': 'ir.actions.client',
+                                'tag': 'display_notification',
+                                'params': {
+                                    'title': _('Anulación Exitosa'),
+                                    'message': f'La boleta {folio} ha sido anulada correctamente.',
+                                    'type': 'success',
+                                    'sticky': False,
+                                }
+                            }
                         raise UserError(_('Error anulando boleta: %s') % (data.get('error') or data))
                     else:
-                        # Texto plano
                         txt = (resp.text or '').strip()
                         if txt and ('anulada' in txt.lower() or 'correctamente' in txt.lower()):
                             record.state = 'cancelled'
                             record.message_post(
-                                body=f"Boleta {folio} anulada exitosamente (motivo {motivo}). Resp: {txt}",
+                                body=f"✅ Boleta {folio} anulada exitosamente (motivo {motivo}). Respuesta: {txt}",
                                 message_type='notification'
                             )
-                            continue
-                        # 200 sin JSON ni palabra clave: marcar cancelado pero dejar evidencia
+                            return {
+                                'type': 'ir.actions.client',
+                                'tag': 'display_notification',
+                                'params': {
+                                    'title': _('Anulación Exitosa'),
+                                    'message': f'La boleta {folio} ha sido anulada correctamente.',
+                                    'type': 'success',
+                                    'sticky': False,
+                                }
+                            }
                         record.state = 'cancelled'
                         record.message_post(
-                            body=f"Boleta {folio} anulada (HTTP {resp.status_code}) sin JSON; cuerpo: {txt[:300]}",
+                            body=f"✅ Boleta {folio} anulada (HTTP {resp.status_code}) sin JSON; cuerpo: {txt[:300]}",
                             message_type='notification'
                         )
-                        continue
-
-                # Status distinto de 200/202
+                        return {
+                            'type': 'ir.actions.client',
+                            'tag': 'display_notification',
+                            'params': {
+                                'title': _('Anulación Procesada'),
+                                'message': f'La boleta {folio} ha sido procesada para anulación.',
+                                'type': 'success',
+                                'sticky': False,
+                            }
+                        }
                 raise UserError(_('Error anulando boleta: %s - %s') % (resp.status_code, body_preview))
             except UserError:
                 raise
             except Exception as e:
                 _logger.warning(f"[BHE] Error inesperado anulando boleta {record.numero_boleta}: {e}")
-                raise UserError(_('Error inesperado anulando boleta: %s') % str(e))  # [4][3]
+                raise UserError(_('Error inesperado anulando boleta: %s') % str(e))
 
     @api.model
     def cron_download_pending_pdfs(self):
         return
 
-    @api.constrains('valor_bruto')
-    def _check_valor_bruto(self):
-        for rec in self:
-            if rec.valor_bruto <= 0:
-                raise ValidationError(_('El valor bruto debe ser mayor a cero'))
-
+    # Validaciones de RUT
     @api.constrains('rut_usuario')
     def _check_rut_usuario(self):
         for rec in self:
@@ -439,49 +481,3 @@ class BoletaHonorarios(models.Model):
         resto = suma % 11
         dv_calc = '0' if resto == 0 else 'K' if resto == 1 else str(11 - resto)
         return dv == dv_calc
-    @api.model_create_multi
-    def create(self, vals_list):
-        records = super(BoletaHonorarios, self).create(vals_list)
-        comuna_obj = self.env['boleta.comuna']
-        for record in records:
-            try:
-                if not record.comuna_id and record.partner_id:
-                    comuna_name = (record.partner_id.city or '').strip()
-                    if comuna_name:
-                        comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
-                        if not comuna:
-                            comuna = comuna_obj.create({'name': comuna_name})
-                            _logger.info(f"Comuna creada automáticamente: {comuna_name}")
-                        record.comuna_id = comuna.id
-
-                if record.comuna_id:
-                    record.receptor_comuna = record.comuna_id.name
-
-            except Exception as e:
-                _logger.error(f"[ERROR] No se pudo asociar comuna a boleta {record.id}. Detalle: {e}")
-                raise UserError(_("No se pudo asociar una comuna a la boleta. Detalles: %s") % str(e))
-
-        return records
-
-def write(self, vals):
-    res = super(BoletaHonorarios, self).write(vals)
-    comuna_obj = self.env['boleta.comuna']
-    for boleta in self:
-        try:
-            if ('partner_id' in vals or 'comuna_id' in vals) or not boleta.comuna_id:
-                comuna_name = (boleta.partner_id.city or '').strip()
-                if comuna_name:
-                    comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
-                    if not comuna:
-                        comuna = comuna_obj.create({'name': comuna_name})
-                        _logger.info(f"Comuna creada automáticamente: {comuna_name}")
-                    boleta.comuna_id = comuna.id
-
-            if boleta.comuna_id:
-                boleta.receptor_comuna = boleta.comuna_id.name
-
-        except Exception as e:
-            _logger.error(f"[ERROR] No se pudo actualizar comuna en boleta {boleta.id}. Detalle: {e}")
-            raise UserError(_("No se pudo actualizar la comuna de la boleta. Detalles: %s") % str(e))
-
-    return res

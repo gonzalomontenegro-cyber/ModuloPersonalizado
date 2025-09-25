@@ -58,19 +58,18 @@ class BoletaComuna(models.Model):
         if not api_key_clean:
             attempts.append({'name': 'no_auth', 'headers': headers_base.copy()})
         else:
-            # CAMBIO: Priorizar x-api-key primero
-            # 1) x-api-key header con token puro
-            token_only = api_key_clean.split(None, 1)[1] if api_key_clean.lower().startswith('bearer ') and len(api_key_clean.split(None, 1)) > 1 else api_key_clean
-            h_x = headers_base.copy()
-            h_x['x-api-key'] = token_only
-            attempts.append({'name': 'x-api-key', 'headers': h_x})
-
-            # 2) Authorization tal cual
+            # CAMBIO: Priorizar Authorization tal cual (como en boleta_honorarios.py)
+            # 1) Authorization tal cual - MÉTODO PRINCIPAL
             h_as_is = headers_base.copy()
             h_as_is['Authorization'] = api_key_clean
-            attempts.append({'name': 'auth_as_is', 'headers': h_as_is})
+            attempts.append({'name': 'auth_direct', 'headers': h_as_is})
 
-            # 3) Authorization: Bearer <token>
+            # 2) x-api-key como alternativa
+            h_x = headers_base.copy()
+            h_x['x-api-key'] = api_key_clean
+            attempts.append({'name': 'x-api-key', 'headers': h_x})
+
+            # 3) Authorization: Bearer <token> como último recurso
             if not api_key_clean.lower().startswith('bearer '):
                 h_bearer = headers_base.copy()
                 h_bearer['Authorization'] = f"Bearer {api_key_clean}"
