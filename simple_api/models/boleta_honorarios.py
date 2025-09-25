@@ -133,13 +133,13 @@ class BoletaHonorarios(models.Model):
         base_url = config.get_param('boleta_honorarios.simpleapi_base_url', 'https://servicios.simpleapi.cl/api')
         timeout = int(config.get_param('boleta_honorarios.simpleapi_timeout', '30'))
         
-        #Normalizar: si la clave existe y no viene ya con "Bearer" la añadimos.
-        if api_key and not api_key.strip().lower().startswith('bearer '):
-            api_key = f"Bearer {api_key.strip()}"
+        # CAMBIO: Eliminar normalización automática Bearer
+        # if api_key and not api_key.strip().lower().startswith('bearer '):
+        #     api_key = f"Bearer {api_key.strip()}"
 
         _logger.info(f"[BHE] Config SimpleAPI base_url={base_url} api_key={_mask_key(api_key)} timeout={timeout}")
         return {
-            'api_key': api_key,
+            'api_key': api_key.strip() if api_key else '',  # Solo limpiar espacios
             'base_url': base_url,
             'timeout': timeout
         }  # [1][3]
@@ -190,13 +190,14 @@ class BoletaHonorarios(models.Model):
     def _call_simpleapi(self, data):
         config = self.get_simpleapi_config()
         try:
+            # CAMBIO: Usar x-api-key en lugar de Authorization
             headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'Authorization': config['api_key']
+                'x-api-key': config['api_key']
             }
             url = f"{config['base_url']}/bhe/emitir"
-            _logger.info(f"🚀 [BHE] POST emitir -> {url} key={_mask_key(headers['Authorization'])}")
+            _logger.info(f"🚀 [BHE] POST emitir -> {url} key={_mask_key(config['api_key'])}")
             resp = requests.post(url, json=data, headers=headers, timeout=config['timeout'])
             _logger.info(f"[BHE] emitir status={resp.status_code} body={resp.text[:300]}")
             if resp.status_code == 200:
@@ -213,8 +214,9 @@ class BoletaHonorarios(models.Model):
             time.sleep(wait_seconds)
         config = self.get_simpleapi_config()
         url = f"{config['base_url']}/bhe/mail/{folio}/{anio}"
+        # CAMBIO: Usar x-api-key
         headers = {
-            'Authorization': config['api_key'],
+            'x-api-key': config['api_key'],
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': 'odoo-18-bhe'
@@ -224,7 +226,7 @@ class BoletaHonorarios(models.Model):
             'PasswordSII': self.password_sii,
             'Correo': email
         }
-        _logger.info(f"✉️ [BHE] POST mail {url} key={_mask_key(headers['Authorization'])} -> {payload}")
+        _logger.info(f"✉️ [BHE] POST mail {url} key={_mask_key(config['api_key'])} -> {payload}")
         resp = requests.post(url, json=payload, headers=headers, timeout=config['timeout'])
         _logger.info(f"Mail status={resp.status_code} ct={resp.headers.get('Content-Type')} body={resp.text[:300]}")
         if resp.status_code in (200, 202):
@@ -291,10 +293,11 @@ class BoletaHonorarios(models.Model):
                 raise UserError(_('Solo se pueden anular boletas emitidas'))
             try:
                 config = record.get_simpleapi_config()
+                # CAMBIO: Usar x-api-key
                 headers = {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': config['api_key']
+                    'x-api-key': config['api_key']
                 }
                 data = {
                     'numeroDocumento': record.numero_boleta,
@@ -302,7 +305,7 @@ class BoletaHonorarios(models.Model):
                     'passwordSII': record.password_sii
                 }
                 url = f"{config['base_url']}/bhe/anular"
-                _logger.info(f"[BHE] POST legacy {url} key={_mask_key(headers['Authorization'])}")
+                _logger.info(f"[BHE] POST legacy {url} key={_mask_key(config['api_key'])}")
                 resp = requests.post(url, json=data, headers=headers, timeout=config['timeout'])
                 body_preview = resp.text[:300] if hasattr(resp, 'text') else str(resp)[:300]
                 if resp.status_code == 200:
@@ -334,10 +337,11 @@ class BoletaHonorarios(models.Model):
                 raise UserError(_('Debe seleccionar un motivo válido (1, 2 o 3)'))
             try:
                 config = record.get_simpleapi_config()
+                # CAMBIO: Usar x-api-key
                 headers = {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': config['api_key'],
+                    'x-api-key': config['api_key'],
                     'User-Agent': 'odoo-18-bhe'
                 }
                 folio = str(record.numero_boleta).strip()
@@ -347,7 +351,7 @@ class BoletaHonorarios(models.Model):
                     "RutUsuario": record.rut_usuario.replace('.', '').replace('-', ''),
                     "PasswordSII": record.password_sii
                 }
-                _logger.info(f"🧻 [BHE] POST {url} key={_mask_key(headers['Authorization'])} -> body={{'RutUsuario':'***','PasswordSII':'***'}}")
+                _logger.info(f"🧻 [BHE] POST {url} key={_mask_key(config['api_key'])} -> body={{'RutUsuario':'***','PasswordSII':'***'}}")
                 resp = requests.post(url, json=payload, headers=headers, timeout=config['timeout'])
                 body_preview = resp.text[:300] if hasattr(resp, 'text') else str(resp)[:300]
                 _logger.info(f"[BHE] Anular status={resp.status_code} body={body_preview}")
