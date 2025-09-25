@@ -38,6 +38,14 @@ class BoletaHonorarios(models.Model):
     _rec_name = 'numero_boleta'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
+    # CAMPO FALTANTE: Relación con comuna
+    comuna_id = fields.Many2one(
+        "boleta.comuna",
+        string="Comuna",
+        ondelete="set null",
+        help="Comuna asociada automáticamente al emitir la boleta."
+    )
+
     # Campos básicos
     numero_boleta = fields.Char('Número de Boleta', readonly=True, tracking=True)
     fecha_emision = fields.Date('Fecha Emisión', default=fields.Date.today, required=True, tracking=True)
@@ -157,6 +165,10 @@ class BoletaHonorarios(models.Model):
                 self.receptor_region = region_mapping.get(partner.state_id.name, '13')
             if partner.city:
                 self.receptor_comuna = partner.city
+                # Buscar y asignar comuna_id si existe
+                comuna = self.env['boleta.comuna'].search([('name', '=', partner.city)], limit=1)
+                if comuna:
+                    self.comuna_id = comuna.id
             if not self.email_destinatario and partner.email:
                 self.email_destinatario = partner.email
 
@@ -167,6 +179,20 @@ class BoletaHonorarios(models.Model):
             if partner:
                 self.partner_id = partner
                 self._onchange_partner_id()
+
+    @api.onchange('comuna_id')
+    def _onchange_comuna_id(self):
+        """Sincroniza receptor_comuna con comuna_id"""
+        if self.comuna_id:
+            self.receptor_comuna = self.comuna_id.name
+
+    @api.onchange('receptor_comuna')
+    def _onchange_receptor_comuna(self):
+        """Busca y asigna comuna_id cuando se cambia receptor_comuna manualmente"""
+        if self.receptor_comuna and not self.comuna_id:
+            comuna = self.env['boleta.comuna'].search([('name', '=', self.receptor_comuna)], limit=1)
+            if comuna:
+                self.comuna_id = comuna.id
 
     @api.model
     def get_simpleapi_config(self):
@@ -481,3 +507,39 @@ class BoletaHonorarios(models.Model):
         resto = suma % 11
         dv_calc = '0' if resto == 0 else 'K' if resto == 1 else str(11 - resto)
         return dv == dv_calc
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super(BoletaHonorarios, self).create(vals_list)
+        comuna_obj = self.env['boleta.comuna']
+        for record in records:
+            try:
+                if not record.comuna_id and record.receptor_comuna:
+                    comuna_name = record.receptor_comuna.strip()
+                    if comuna_name:
+                        comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
+                        if not comuna:
+                            comuna = comuna_obj.create({'name': comuna_name})
+                            _logger.info(f"Comuna creada automáticamente: {comuna_name}")
+                        record.comuna_id = comuna.id
+            except Exception as e:
+                _logger.error(f"[ERROR] No se pudo asociar comuna a boleta {record.id}. Detalle: {e}")
+        return records
+
+    def write(self, vals):
+        res = super(BoletaHonorarios, self).write(vals)
+        if 'receptor_comuna' in vals or 'comuna_id' in vals:
+            comuna_obj = self.env['boleta.comuna']
+            for boleta in self:
+                try:
+                    if 'receptor_comuna' in vals and not boleta.comuna_id:
+                        comuna_name = boleta.receptor_comuna.strip() if boleta.receptor_comuna else ''
+                        if comuna_name:
+                            comuna = comuna_obj.search([('name', '=', comuna_name)], limit=1)
+                            if not comuna:
+                                comuna = comuna_obj.create({'name': comuna_name})
+                                _logger.info(f"Comuna creada automáticamente: {comuna_name}")
+                            boleta.comuna_id = comuna.id
+                except Exception as e:
+                    _logger.error(f"[ERROR] No se pudo actualizar comuna en boleta {boleta.id}. Detalle: {e}")
+        return res
