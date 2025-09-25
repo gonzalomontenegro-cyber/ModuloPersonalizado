@@ -132,6 +132,11 @@ class BoletaHonorarios(models.Model):
         api_key = config.get_param('boleta_honorarios.simpleapi_api_key', '5858-R580-6392-2845-5641')
         base_url = config.get_param('boleta_honorarios.simpleapi_base_url', 'https://servicios.simpleapi.cl/api')
         timeout = int(config.get_param('boleta_honorarios.simpleapi_timeout', '30'))
+        
+        #Normalizar: si la clave existe y no viene ya con "Bearer" la añadimos.
+        if api_key and not api_key.strip().lower().startswith('bearer '):
+            api_key = f"Bearer {api_key.strip()}"
+            
         _logger.info(f"[BHE] Config SimpleAPI base_url={base_url} api_key={_mask_key(api_key)} timeout={timeout}")
         return {
             'api_key': api_key,
