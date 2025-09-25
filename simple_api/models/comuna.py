@@ -45,57 +45,101 @@ class BoletaComuna(models.Model):
         timeout = int(icp.get_param('boleta_honorarios.simpleapi_timeout') or 30)
         return base_url.rstrip('/'), api_key, timeout
 
-    def sync_comunas(self):
+    
+def sync_comunas(self):
         """Sincroniza comunas desde la API externa de SimpleAPI (listarComunas).
-        Puede ser invocado desde un botón o por un cron.
+        Mantiene self.ensure_one() para conservar el comportamiento actual.
+        Implementa varios intentos de autenticación para evitar 401 por formato del header.
         """
         self.ensure_one()
         base_url, api_key, timeout = self._get_simpleapi_settings()
         url = f"{base_url}/bhe/listarComunas"
 
-        headers = {'Accept': 'application/json'}
-        if api_key:
-            headers['Authorization'] = f'Bearer {api_key}'
+        headers_base = {'Accept': 'application/json'}
+        attempts = []
 
-        try:
-            _logger.info('Solicitando comunas a %s', url)
-            response = requests.get(url, headers=headers, timeout=timeout)
-            if response.status_code != 200:
-                _logger.error('Error al consumir API comunas. Código: %s - %s', response.status_code, response.text)
-                raise UserError(_('Error al obtener comunas desde SimpleAPI: %s') % response.status_code)
+        # preparar intentos de autenticación
+        api_key_clean = (api_key or '').strip()
+        if not api_key_clean:
+            attempts.append({'name': 'no_auth', 'headers': headers_base.copy()})
+        else:
+            # 1) Authorization tal cual (por si el usuario guardó 'Bearer ...' o formato custom)
+            h_as_is = headers_base.copy()
+            h_as_is['Authorization'] = api_key_clean
+            attempts.append({'name': 'auth_as_is', 'headers': h_as_is})
 
-            data = response.json()
+            # 2) Authorization: Bearer <token> (si no empieza por Bearer)
+            if not api_key_clean.lower().startswith('bearer '):
+                h_bearer = headers_base.copy()
+                h_bearer['Authorization'] = f"Bearer {api_key_clean}"
+                attempts.append({'name': 'auth_bearer', 'headers': h_bearer})
 
-            # La API podría responder directamente una lista o un objeto con clave 'comunas' o 'data'.
-            if isinstance(data, dict):
-                comunas = data.get('comunas') or data.get('data') or data.get('results') or []
-            elif isinstance(data, list):
-                comunas = data
-            else:
-                comunas = []
+            # 3) x-api-key header con el token puro
+            token_only = api_key_clean.split(None,1)[1] if api_key_clean.lower().startswith('bearer ') and len(api_key_clean.split(None,1))>1 else api_key_clean
+            h_x = headers_base.copy()
+            h_x['x-api-key'] = token_only
+            attempts.append({'name': 'x-api-key', 'headers': h_x})
 
-            processed = 0
-            for item in comunas:
-                # Soportar objetos con 'id' y 'nombre' o con 'codigo' y 'comuna' etc.
-                codigo = item.get('id') or item.get('codigo') or item.get('code') or False
-                nombre = item.get('nombre') or item.get('comuna') or item.get('name') or False
-                if not nombre:
-                    _logger.warning('Elemento comunas sin nombre: %s', item)
-                    continue
+        last_exc = None
+        processed_total = 0
+        for att in attempts:
+            name = att['name']
+            headers = att['headers']
+            try:
+                _logger.info('Solicitando comunas a %s (modo=%s, auth_preview=%s)', url, name, headers.get('Authorization') or headers.get('x-api-key') or '<none>')
+                response = requests.get(url, headers=headers, timeout=timeout)
+            except Exception as e:
+                _logger.exception('Error en request (modo=%s): %s', name, e)
+                last_exc = e
+                continue
 
-                vals = {'name': nombre}
-                if codigo:
-                    vals['codigo'] = str(codigo)
+            _logger.info('Modo=%s HTTP=%s', name, response.status_code)
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                except Exception as e:
+                    _logger.exception('JSON inválido en respuesta: %s', e)
+                    raise UserError(_('Respuesta de SimpleAPI no es JSON válido: %s') % e)
 
-                existing = self.search([('codigo', '=', vals.get('codigo'))], limit=1) if vals.get('codigo') else self.search([('name', '=', nombre)], limit=1)
-                if existing:
-                    existing.write(vals)
+                if isinstance(data, dict):
+                    comunas = data.get('comunas') or data.get('data') or data.get('results') or []
+                elif isinstance(data, list):
+                    comunas = data
                 else:
-                    self.create(vals)
-                processed += 1
+                    comunas = []
 
-            _logger.info('Sincronización de comunas completada. Procesadas: %s', processed)
-            return True
-        except Exception as e:
-            _logger.exception('Error en sync_comunas: %s', e)
-            raise UserError(_('Error al sincronizar comunas: %s') % e)
+                processed = 0
+                for item in comunas:
+                    codigo = item.get('id') or item.get('codigo') or item.get('code') or False
+                    nombre = item.get('nombre') or item.get('comuna') or item.get('name') or False
+                    if not nombre:
+                        _logger.warning('Elemento comunas sin nombre: %s', item)
+                        continue
+
+                    vals = {'name': nombre}
+                    if codigo:
+                        vals['codigo'] = str(codigo)
+
+                    comuna_existente = self.search([('codigo','=', vals.get('codigo'))], limit=1) if vals.get('codigo') else self.search([('name','=', nombre)], limit=1)
+                    if comuna_existente:
+                        comuna_existente.write(vals)
+                    else:
+                        self.create(vals)
+                    processed += 1
+                    processed_total += 1
+
+                _logger.info('Sincronización de comunas completada (modo=%s). Procesadas: %s', name, processed)
+                return True
+
+            if response.status_code in (401, 403):
+                _logger.warning('Modo %s no autorizado (HTTP %s). Intentando siguiente método si existe.', name, response.status_code)
+                last_exc = UserError(_('Error al obtener comunas desde SimpleAPI: %s') % response.status_code)
+                continue
+
+            _logger.warning('Modo %s respuesta inesperada HTTP %s: %s', name, response.status_code, (response.text or '')[:300])
+            last_exc = UserError(_('Error al obtener comunas desde SimpleAPI: %s') % response.status_code)
+
+        # si todos los intentos fallaron, elevar último error
+        if isinstance(last_exc, Exception):
+            raise last_exc
+        raise UserError(_('No se pudo sincronizar comunas: respuesta desconocida de la API.'))
